@@ -8,13 +8,13 @@
         <artifactId>xuecheng-plus-parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <!-- 基于当前pom 找到父工程-->
-        <relativePath>../xuecheng-parent</relativePath>
+        <relativePath>../xuecheng-plus-parent</relativePath>
     </parent>
 
     <groupId>com.xuecheng</groupId>
-    <artifactId>xuecheng-base</artifactId>
+    <artifactId>xuecheng-plus-base</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>xuecheng-base</name>
+    <name>xuecheng-plus-base</name>
     <description>xuecheng-base</description>
 
     <dependencies>
@@ -97,6 +97,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
     </dependencies>
 

@@ -1,0 +1,37 @@
+
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    nacos:
+      server-addr: 192.168.88.130:8848
+      discovery:
+        namespace: dev
+        group: xuecheng-plus-project
+      config:
+        namespace: dev
+        group: xuecheng-plus-project
+        refresh-enabled: true
+        file-extension: yaml
+        shared-configs:
+          - data-id: swagger-${spring.profiles.active}.yaml
+            group: xuecheng-common
+            refresh: true
+
+
+
+  profiles:
+    active: dev #环境名 决定nacos引用哪个环境的配置文件
+
+## 日志文件配置路径
+#logging:
+#  config: classpath:log4j2-dev.xml
+#
+## swagger 文档配置
+#swagger:
+#  title: "学成在线系统管理"
+#  description: "系统管理接口"
+#  base-package: com.xuecheng.system
+#  enabled: true
+#  version: 1.0.0
