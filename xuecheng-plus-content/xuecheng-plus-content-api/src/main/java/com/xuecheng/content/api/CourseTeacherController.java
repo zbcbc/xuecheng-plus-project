@@ -28,6 +28,7 @@ public class CourseTeacherController {
     public List<CourseTeacher> queryTeacher(@PathVariable Long courseId){
         return courseTeacherService.queryTeacher(courseId);
     }
+
     @ApiOperation(value = "新增/修改教师接口")
     @PostMapping("/courseTeacher")
     public List<CourseTeacher> insertOrUpdateTeacher(@RequestBody CourseTeacher courseTeacher){
@@ -39,5 +40,4 @@ public class CourseTeacherController {
     public void deleteTeacher(@PathVariable Long courseId, @PathVariable Long teacherId){
          courseTeacherService.deleteTeacher(courseId, teacherId);
     }
-
 }

@@ -45,6 +45,10 @@ public class MediaFileServiceImpl implements MediaFileService {
     MediaFilesMapper mediaFilesMapper;
     @Autowired
     MinioClient minioClient;
+
+    @Autowired
+    MediaFileService currentProxy;
+
     //存储普通文件
     @Value("${minio.bucket.files}")
     private String bucket_mediafiles;
@@ -69,11 +73,37 @@ public class MediaFileServiceImpl implements MediaFileService {
         // 构建结果集
         PageResult<MediaFiles> mediaListResult = new PageResult<>(list, total, pageParams.getPageNo(), pageParams.getPageSize());
         return mediaListResult;
-
     }
 
     /**
-     * 根据文件扩展名获取mimeType
+     * 上传至minio
+     * @param localFilePath
+     * @param bucket
+     * @param ObjectName
+     * @param mimeType
+     * @return
+     */
+    private boolean addMediaFilesToMinIO(String localFilePath, String bucket, String ObjectName, String mimeType){
+        UploadObjectArgs args = null;
+        try {
+            args = UploadObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(ObjectName)
+                    .contentType(mimeType)
+                    .filename(localFilePath).build();
+
+            minioClient.uploadObject(args);
+            log.debug("上传文件成功:bucket:{}, objectName:{}", bucket, ObjectName);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.debug("上传文件失败:bucket:{}, objectName:{}, error:{}", bucket, ObjectName, e);
+        }
+        return false;
+    }
+
+    /**
+     * 根据后缀得到mimeType
      * @param extension
      * @return
      */
@@ -81,11 +111,9 @@ public class MediaFileServiceImpl implements MediaFileService {
         if(extension == null){
             extension = "";
         }
-
         ContentInfo extensionMatch = ContentInfoUtil.findExtensionMatch(extension);
 
-        String mimeType = MediaType.APPLICATION_OCTET_STREAM_VALUE;//通用字节流
-
+        String mimeType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         if(extensionMatch != null){
             mimeType = extensionMatch.getMimeType();
         }
@@ -93,54 +121,15 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     /**
-     * 上传文件至minio
-     * @param localFilePath
-     * @param bucket
-     * @param mimeType
-     * @param objectName
-     * @return
-     */
-    private boolean addMediaFilesToMinIO(String localFilePath, String bucket, String mimeType, String objectName) {
-        try {
-            UploadObjectArgs uploadObjectArgs = UploadObjectArgs.builder()
-                    .bucket(bucket)
-                    .filename(localFilePath)
-                    .object(objectName)
-                    .contentType(mimeType)
-                    .build();
-            minioClient.uploadObject(uploadObjectArgs);
-            log.debug("上传文件成功:bucket:{}, objectName:{}, 错误信息:{}", bucket, objectName);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("上传文件出错:bucket:{}, objectName:{}, 错误信息:{}", bucket, objectName, e);
-
-        }
-        return false;
-    }
-
-    /**
-     * 获取文件默认存储的目录路径  年/月/日
-     * @return
-     */
-    private String getDefaultFolderPath(){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String folder = simpleDateFormat.format(new Date())
-                .replace("-", "/") + "/";
-        return folder;
-    }
-
-    /**
-     * 得到文件的md5值
+     * 得到文件的MD5
      * @param file
      * @return
      */
     private String getFileMd5(File file){
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(file);
-            String fileMd5 = DigestUtils.md5Hex(fileInputStream);
-            return fileMd5;
+        try(FileInputStream fileInputStream = new FileInputStream(file)){
+            String md5Hex = DigestUtils.md5Hex(fileInputStream);
+            return md5Hex;
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -148,21 +137,34 @@ public class MediaFileServiceImpl implements MediaFileService {
     }
 
     /**
-     * @description 将文件信息添加到文件表
-     * @param companyId  机构id
-     * @param fileMd5  文件md5值
-     * @param uploadFileParamsDto  上传文件的信息
-     * @param bucket  桶
-     * @param objectName 对象名称
-     * @return com.xuecheng.media.model.po.MediaFiles
+     * 获取文件的默认目录 年/月/日
+     * @return
+     */
+    private String getDefaultFolderPath(){
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String folder = sdf.format(new Date()).replace("-", "/") + "/";
+        return folder;
+    }
+
+    /**
+     * 将文件信息添加至数据库
+     * @param companyId
+     * @param fileMd5
+     * @param uploadFileParamsDto
+     * @param bucket
+     * @param objectName
+     * @return
      */
     @Transactional
-    public MediaFiles addMediaFilesToDb(Long companyId,String fileMd5,UploadFileParamsDto uploadFileParamsDto,String bucket,String objectName){
-        //从数据库查询文件
+    public MediaFiles addMediaFilesToDb(Long companyId,
+                                        String fileMd5,
+                                        UploadFileParamsDto uploadFileParamsDto,
+                                        String bucket,
+                                        String objectName){
+        //查询文件 是否存在
         MediaFiles mediaFiles = mediaFilesMapper.selectById(fileMd5);
-        if (mediaFiles == null) {
+        if(mediaFiles != null){
             mediaFiles = new MediaFiles();
-            //拷贝基本信息
             BeanUtils.copyProperties(uploadFileParamsDto, mediaFiles);
             mediaFiles.setId(fileMd5);
             mediaFiles.setFileId(fileMd5);
@@ -185,38 +187,46 @@ public class MediaFileServiceImpl implements MediaFileService {
         return mediaFiles;
     }
 
+
     /**
-     * 从本地上传文件至minio
+     * 上传文件
      * @param companyId
      * @param uploadFileParamsDto
      * @param localFilePath 本地磁盘路径
      * @return
      */
-    @Transactional
+
     @Override
     public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
-        String filename = uploadFileParamsDto.getFilename();
-        //得到扩展名
-        String extension = filename.substring(filename.lastIndexOf("."));
-        String mimeType = getMimeType(extension);
-        //子目录
-        String defaultFolderPath = getDefaultFolderPath();
-        //文件的md5值
-        String fileMd5 = getFileMd5(new File(localFilePath));
-        //得到object
-        String objectName = defaultFolderPath + fileMd5 + extension;
-        //上传文件至minio
-        boolean result = addMediaFilesToMinIO(localFilePath, bucket_mediafiles, mimeType, objectName);
-        if(!result){
-            XueChengPlusException.cast("上传失败");
+        File file = new File(localFilePath);
+        if(!file.exists()){
+            XueChengPlusException.cast("文件不存在");
         }
 
+        String filename = uploadFileParamsDto.getFilename();
+        //object 路径+md5值+格式后缀
+        //文件扩展名
+        String extension = filename.substring(filename.lastIndexOf("."));
+        //根据后缀得到mimeType
+        String mimeType = getMimeType(extension);
+        //md5
+        String fileMd5 = getFileMd5(file);
+        //默认目录 年/月/日
+        String defaultFolderPath = getDefaultFolderPath();
+        //存储到minIO中的对象名(带目录)
+        String objectName = defaultFolderPath + fileMd5 + extension;
+        //将文件上传至minio
+        boolean b = addMediaFilesToMinIO(localFilePath, bucket_mediafiles, objectName, mimeType);
 
-        //将文件信息保存至数据库
-        MediaFiles mediaFiles = addMediaFilesToDb(companyId, fileMd5, uploadFileParamsDto, bucket_mediafiles, objectName);
+        //文件大小
+        uploadFileParamsDto.setFileSize(file.length());
+        //将文件信息存储到数据库
+        MediaFiles mediaFiles = currentProxy.addMediaFilesToDb(companyId, fileMd5, uploadFileParamsDto, bucket_mediafiles, objectName);
+
         //准备返回数据
         UploadFileResultDto uploadFileResultDto = new UploadFileResultDto();
         BeanUtils.copyProperties(mediaFiles, uploadFileResultDto);
+
         return uploadFileResultDto;
     }
 }

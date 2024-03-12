@@ -98,5 +98,9 @@ Content-Type: application/json
   "courseName": ""
 }
 
+###上传文件
+#POST {{media_host}}/media/upload/coursefile
+#Content-Type:
+
 <> 2024-02-09T184808.200.json
 <> 2024-02-09T184352.404.html
