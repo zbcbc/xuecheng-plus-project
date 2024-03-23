@@ -1,27 +1,22 @@
-#server:
-#  servlet:
-#    context-path: /system
-#  port: 63110
 ##微服务配置
 spring:
   application:
     name: system-api
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://192.168.88.130:3306/xuecheng_system?serverTimezone=UTC&userUnicode=true&useSSL=false&
-#    username: root
-#    password: zbc2723852
   cloud:
     nacos:
       server-addr: 192.168.88.130:8848
       discovery:
-        namespace: dev
+        namespace: ${spring.profiles.active}
         group: xuecheng-plus-project
       config:
-        namespace: dev
+        namespace: ${spring.profiles.active}
         group: xuecheng-plus-project
         refresh-enabled: true
         file-extension: yaml
+        extension-configs:
+          - data-id: system-service-${spring.profiles.active}.yaml
+            group: xuecheng-plus-project
+            refresh: true
         shared-configs:
           - data-id: swagger-${spring.profiles.active}.yaml
             group: xuecheng-common
@@ -29,14 +24,11 @@ spring:
           - data-id: logging-${spring.profiles.active}.yaml
             group: xuecheng-common
             refresh: true
-        extension-configs:
-          - data-id: system-service-${spring.profiles.active}.yaml
-            group: xuecheng-plus-project
-            refresh: true
-
 
   profiles:
-    active: dev #环境名 决定nacos引用哪个环境的配置文件
+    active: dev
+
+#环境名 决定nacos引用哪个环境的配置文件
 
 ## 日志文件配置路径
 #logging:

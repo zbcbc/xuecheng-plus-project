@@ -102,5 +102,12 @@ Content-Type: application/json
 #POST {{media_host}}/media/upload/coursefile
 #Content-Type:
 
+
+### 课程计划绑定视频
+POST {{media_host}}/media/teachplan/association/media
+Content-Type: application/json
+
+
+
 <> 2024-02-09T184808.200.json
 <> 2024-02-09T184352.404.html

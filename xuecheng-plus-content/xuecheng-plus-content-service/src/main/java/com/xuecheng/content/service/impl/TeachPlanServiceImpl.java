@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xuecheng.base.execption.XueChengPlusException;
 import com.xuecheng.content.mapper.TeachplanMapper;
 import com.xuecheng.content.mapper.TeachplanMediaMapper;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachPlanDto;
 import com.xuecheng.content.model.po.Teachplan;
@@ -125,6 +126,45 @@ public class TeachPlanServiceImpl implements TeachPlanService {
         //交换
         exchangeTeachplanOrderBy(teachplan, tmp);
     }
+
+    /**
+     * 教学计划媒资绑定
+     * @param bindTeachplanMediaDto
+     */
+    @Override
+    @Transactional
+    public TeachplanMedia associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto) {
+        Long teachplanId = bindTeachplanMediaDto.getTeachplanId();
+        Teachplan teachplan = teachplanMapper.selectById(teachplanId);
+        if(teachplan == null){
+            XueChengPlusException.cast("教学计划不存在");
+        }
+        Integer grade = teachplan.getGrade();
+        if(grade != 2){
+            XueChengPlusException.cast("只允许第二级教学计划绑定媒资文件");
+        }
+        Long courseId = teachplan.getCourseId();
+
+        //先删除原有记录，再添加原有记录
+        //根据课程计划id 删除它所绑定的媒资信息
+        int delete = teachplanMediaMapper.delete(new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getTeachplanId, teachplanId));
+        //添加原有记录
+        TeachplanMedia teachplanMedia = new TeachplanMedia();
+        BeanUtils.copyProperties(bindTeachplanMediaDto, teachplanMedia);
+        teachplanMedia.setCourseId(courseId);
+        teachplanMedia.setMediaFilename(bindTeachplanMediaDto.getFileName());
+        teachplanMediaMapper.insert(teachplanMedia);
+        return teachplanMedia;
+    }
+
+    @Override
+    public void unassociationMedia(Long teachPlanId, String mediaId) {
+        LambdaQueryWrapper<TeachplanMedia> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TeachplanMedia::getTeachplanId, teachPlanId)
+                        .eq(TeachplanMedia::getMediaId, mediaId);
+        teachplanMediaMapper.delete(wrapper);
+    }
+
     public void exchangeTeachplanOrderBy(Teachplan teachplan1, Teachplan tmp){
         if(tmp == null){
             XueChengPlusException.cast("无法再移动了");
@@ -137,4 +177,5 @@ public class TeachPlanServiceImpl implements TeachPlanService {
             teachplanMapper.updateById(tmp);
         }
     }
+
 }
