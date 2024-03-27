@@ -148,7 +148,7 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
      * @param courseId
      * @return
      */
-    public CourseBaseInfoDto getCourseBaseInfo(long courseId){
+    public CourseBaseInfoDto getCourseBaseInfo(Long courseId){
         CourseBase courseBase = courseBaseMapper.selectById(courseId);
         if(courseBase == null){
             return null;

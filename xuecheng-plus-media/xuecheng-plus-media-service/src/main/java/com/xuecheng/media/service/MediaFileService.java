@@ -17,6 +17,12 @@ import java.io.File;
  * @version 1.0
  */
 public interface MediaFileService {
+ /**
+  * 根据id查文件信息
+  * @param mediaId
+  * @return
+  */
+ MediaFiles getFileById(String mediaId);
 
  /**
   * @description 媒资文件查询方法

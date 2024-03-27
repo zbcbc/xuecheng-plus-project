@@ -23,7 +23,7 @@ public interface CourseBaseInfoService {
     public PageResult<CourseBase> queryCourseBaseList(PageParams pageParams, QueryCourseParamsDto queryCourseParamsDto);
     public CourseBaseInfoDto createCourseBase(Long companyId, AddCourseDto addCourseDto);
 
-    public CourseBaseInfoDto getCourseBaseInfo(long courseId);
+    public CourseBaseInfoDto getCourseBaseInfo(Long courseId);
 
     CourseBaseInfoDto updateCourseBase(Long companyId, EditCourseDto editCourseDto);
 
