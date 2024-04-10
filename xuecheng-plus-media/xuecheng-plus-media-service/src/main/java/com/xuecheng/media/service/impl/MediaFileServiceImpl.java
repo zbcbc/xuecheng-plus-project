@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.j256.simplemagic.ContentInfo;
 import com.j256.simplemagic.ContentInfoUtil;
-import com.xuecheng.base.execption.XueChengPlusException;
+import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.base.model.RestResponse;
@@ -21,6 +21,7 @@ import io.minio.messages.DeleteObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -380,7 +381,7 @@ public class MediaFileServiceImpl implements MediaFileService {
      * @return
      */
     @Override
-    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
+    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath, String objectName) {
         File file = new File(localFilePath);
         if(!file.exists()){
             XueChengPlusException.cast("文件不存在");
@@ -397,7 +398,11 @@ public class MediaFileServiceImpl implements MediaFileService {
         //默认目录 年/月/日
         String defaultFolderPath = getDefaultFolderPath();
         //存储到minIO中的对象名(带目录)
-        String objectName = defaultFolderPath + fileMd5 + extension;
+        if(StringUtils.isEmpty(objectName)){
+            //使用默认的年月日去存储
+            objectName = defaultFolderPath + fileMd5 + extension;
+        }
+
         //将文件上传至minio
         boolean b = addMediaFilesToMinIO(localFilePath, bucket_mediafiles, objectName, mimeType);
 

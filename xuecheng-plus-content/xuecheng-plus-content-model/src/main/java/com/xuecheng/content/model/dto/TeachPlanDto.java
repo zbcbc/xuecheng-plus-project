@@ -19,10 +19,10 @@ import java.util.List;
 @Data
 @ToString
 public class TeachPlanDto extends Teachplan {
-    //课程计划相关联的媒资信息
-    TeachplanMedia teachplanMedia;
 
     //子结点
     List<TeachPlanDto> teachPlanTreeNodes;
+    //课程计划相关联的媒资信息
+    TeachplanMedia teachplanMedia;
 
 }

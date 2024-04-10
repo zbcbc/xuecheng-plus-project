@@ -174,7 +174,8 @@
             <div class="article-cont-catalog">
                 <div class="article-left-box">
                     <div class="content">
-                        <#list model.teachplans as firstNode>
+                        <#if model.teachplans??>
+                            <#list model.teachplans as firstNode>
                             <div class="item">
                                 <div class="title act"><i class="i-chevron-top"></i>${firstNode.pname}<span class="time">x小时</span></div>
                                 <div class="drop-down" style="height: 260px;">
@@ -186,6 +187,7 @@
                                 </div>
                             </div>
                         </#list>
+                        </#if>
                        <#-- <div class="item">
                             <div class="title act"><i class="i-chevron-top"></i>第一阶段 HTTP协议基础详解<span class="time">8小时</span></div>
                             <div class="about">使用Java消息中间件处理异步消息成为了分布式系统中的必修课，通过本门课程可以深入浅出的学习如何在Java中使用消息中间件并且一步一步打造更优雅的最佳实践方案。</div>

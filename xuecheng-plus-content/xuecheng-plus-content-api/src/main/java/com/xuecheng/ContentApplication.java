@@ -3,12 +3,13 @@ package com.xuecheng;
 import com.spring4all.swagger.EnableSwagger2Doc;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * @Create: 2024/2/6 - 16:33
  */
 @EnableSwagger2Doc
+@EnableFeignClients(basePackages = {"com.xuecheng.content.feignclient"})
 @SpringBootApplication
 public class ContentApplication {
     public static void main(String[] args) {
